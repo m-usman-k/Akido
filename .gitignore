@@ -1,5 +1,11 @@
 .env
 
 /.venv
+/__pycache__
+/.vscode
+/.idea
+/.pytest_cache
+/.mypy_cache
+/.coverage
 
 */__pycache__
