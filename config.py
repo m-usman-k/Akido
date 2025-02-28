@@ -1,0 +1,1 @@
+EMBED_COLOR_CODE = "#2f3136"
