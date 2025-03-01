@@ -1,1 +1,12 @@
-{}
+[
+    {
+        "command": "help",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "settings",
+        "users": [],
+        "roles": []
+    }
+]

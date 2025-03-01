@@ -22,7 +22,7 @@ async def on_ready():
         print("🔴 | Permissions file not found")
         print("🟡 | Creating permissions file")
         with open(PERMISSIONS_JSON_FILE_PATH, "w") as f:
-            f.write("{}")
+            f.write("[]")
         print("🟢 | Permissions file created")
 
 
@@ -31,6 +31,7 @@ async def on_ready():
     print("🟢 | Connected to database")
 
     print("🟡 | Loading all extensions")
+    await bot.load_extension("extensions.Help")
     await bot.load_extension("extensions.Permissions")
     print("🟢 | All extensions loaded")
 
