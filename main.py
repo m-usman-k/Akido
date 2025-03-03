@@ -6,6 +6,7 @@ from functions.database import database
 
 from config import BOT_PREFIX
 from config import DATABASE_FILE_PATH
+from config import BLACKLISTS_JSON_FILE_PATH
 from config import PERMISSIONS_JSON_FILE_PATH
 
 load_dotenv()
@@ -25,13 +26,23 @@ async def on_ready():
             f.write("[]")
         print("🟢 | Permissions file created")
 
+    if not os.path.exists(BLACKLISTS_JSON_FILE_PATH):
+        print("🔴 | Blacklists file not found")
+        print("🟡 | Creating blacklists file")
+        with open(BLACKLISTS_JSON_FILE_PATH, "w") as f:
+            f.write("[]")
+        print("🟢 | Blacklists file created")
+
 
     print("🟡 | Connecting to database")
     db = database(DATABASE_FILE_PATH)
+    db.close()
     print("🟢 | Connected to database")
 
     print("🟡 | Loading all extensions")
     await bot.load_extension("extensions.Help")
+    await bot.load_extension("extensions.Events")
+    await bot.load_extension("extensions.Leaderboard")
     await bot.load_extension("extensions.Permissions")
     print("🟢 | All extensions loaded")
 
