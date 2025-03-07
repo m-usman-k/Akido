@@ -42,6 +42,7 @@ async def on_ready():
     print("🟡 | Loading all extensions")
     await bot.load_extension("extensions.Help")
     await bot.load_extension("extensions.Events")
+    await bot.load_extension("extensions.Blacklists")
     await bot.load_extension("extensions.Leaderboard")
     await bot.load_extension("extensions.Permissions")
     print("🟢 | All extensions loaded")
