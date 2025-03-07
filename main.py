@@ -30,7 +30,7 @@ async def on_ready():
         print("🔴 | Blacklists file not found")
         print("🟡 | Creating blacklists file")
         with open(BLACKLISTS_JSON_FILE_PATH, "w") as f:
-            f.write("[]")
+            f.write("""{"blacklist": {"channels": {"text": [],"voice": []},"users": [],"roles": []},"ineligible": {"users": [],"roles": []}}""")
         print("🟢 | Blacklists file created")
 
 
