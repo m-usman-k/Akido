@@ -2,7 +2,12 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+from structures.User import User
+
 from functions.database import database
+
+from functions.blacklists import is_person_blacklisted
+from functions.blacklists import is_channel_blacklisted
 
 from config import DATABASE_FILE_PATH
 
@@ -15,11 +20,14 @@ class Events(commands.Cog):
         if message.author == self.bot.user:
             return
         else:
-            db = database(DATABASE_FILE_PATH)
-            db.add_message(message.author.id)
-            db.close()
+            user = User(message.author.id, message.author.name)
+            
+            if not (is_channel_blacklisted(message.channel.id) or is_person_blacklisted(message.author.id)):
+                db = database(DATABASE_FILE_PATH)
+                db.add_user(user=user)
+                db.add_message(message.author.id)
 
-            print(f"🟢 | 1 Message added to {message.author.name}")
+                print(f"🟢 | 1 Message added to {message.author.name}")
             
 
     @commands.Cog.listener()

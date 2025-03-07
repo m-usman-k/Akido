@@ -6,6 +6,7 @@ from functions.database import database
 
 from config import BOT_PREFIX
 from config import DATABASE_FILE_PATH
+from config import DEFAULTS_JSON_FILE_PATH
 from config import BLACKLISTS_JSON_FILE_PATH
 from config import PERMISSIONS_JSON_FILE_PATH
 
@@ -30,13 +31,19 @@ async def on_ready():
         print("🔴 | Blacklists file not found")
         print("🟡 | Creating blacklists file")
         with open(BLACKLISTS_JSON_FILE_PATH, "w") as f:
-            f.write("""{"blacklist": {"channels": {"text": [],"voice": []},"users": [],"roles": []},"ineligible": {"users": [],"roles": []}}""")
+            f.write("""{"blacklists": {"channels": {"text": [],"voice": []},"users": [],"roles": []},"ineligible": {"users": [],"roles": []}}""")
         print("🟢 | Blacklists file created")
+
+    if not os.path.exists(DEFAULTS_JSON_FILE_PATH):
+        print("🔴 | Defaults file not found")
+        print("🟡 | Creating defaults file")
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as f:
+            f.write("""{"max_voice_points": 120}""")
+        print("🟢 | Defaults file created")
 
 
     print("🟡 | Connecting to database")
     db = database(DATABASE_FILE_PATH)
-    db.close()
     print("🟢 | Connected to database")
 
     print("🟡 | Loading all extensions")
