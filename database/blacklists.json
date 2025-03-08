@@ -2,9 +2,7 @@
     "blacklists": {
         "channels": {
             "text": [],
-            "voice": [
-                1344962259582980181
-            ]
+            "voice": []
         },
         "users": [
             1344988818151051335

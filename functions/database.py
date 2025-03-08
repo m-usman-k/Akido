@@ -43,7 +43,7 @@ class database:
 
         self.conn.commit()
 
-    def add_voicetime(self, user_id, time):
+    def add_voicetime(self, user_id: int, time: int = 1):
         self.cursor.execute("""
         UPDATE users SET voicetime = voicetime + ? WHERE userid = ?""", (time, user_id))
 
