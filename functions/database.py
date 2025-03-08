@@ -48,3 +48,25 @@ class database:
         UPDATE users SET voicetime = voicetime + ? WHERE userid = ?""", (time, user_id))
 
         self.conn.commit()
+
+    def get_message_leaderboard(self) -> list[User]:
+        self.cursor.execute("""
+        SELECT * FROM users ORDER BY messages DESC LIMIT 10""")
+
+        fetched_users = self.cursor.fetchall()
+        users = []
+        for user in fetched_users:
+            users.append(User(userid=user[0], username=user[1], messages=user[2], voicetime=user[3], jailed=user[4]))
+
+        return users
+    
+    def get_voicetime_leaderboard(self) -> list[User]:
+        self.cursor.execute("""
+        SELECT * FROM users ORDER BY voicetime DESC LIMIT 10""")
+
+        fetched_users = self.cursor.fetchall()
+        users = []
+        for user in fetched_users:
+            users.append(User(userid=user[0], username=user[1], messages=user[2], voicetime=user[3], jailed=user[4]))
+
+        return users

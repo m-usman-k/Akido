@@ -16,6 +16,7 @@ class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+        
 
     @app_commands.command(name="user-stats", description="Check your points")
     async def user_stats(self, interaction: discord.Interaction, user: discord
@@ -58,6 +59,55 @@ class Leaderboard(commands.Cog):
         await interaction.response.send_message(embed=embed)
 
     
+    @app_commands.command(name="leaderboard", description="Check leaderboards for both messages and voicetime")
+    async def leaderboard(self, interaction: discord.Interaction):
+        view = LeaderboardView(self.bot, interaction)
+        embed = discord.Embed(title="📊 Choose a Leaderboard", description="Select an option from the dropdown menu below.", color=EMBED_COLOR_CODE)
+        return await interaction.response.send_message(embed=embed, view=view)
+    
+
+class LeaderboardView(discord.ui.View):
+    def __init__(self, bot, interaction):
+        super().__init__()
+        self.add_item(LeaderboardSelect(bot, interaction))
+
+
+class LeaderboardSelect(discord.ui.Select):
+    def __init__(self, bot, interaction):
+        self.bot = bot
+        self.interaction = interaction
+        options = [
+            discord.SelectOption(label="Messages", description="Show the top message senders"),
+            discord.SelectOption(label="Voice Time", description="Show the top voice channel users"),
+        ]
+        super().__init__(placeholder="Select a leaderboard...", options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        """Handles the leaderboard selection."""
+        if interaction.user.id != self.interaction.user.id:
+            return await interaction.response.send_message("You can't interact with this menu!", ephemeral=True)
+        
+        db_manager = database(DATABASE_FILE_PATH)
+
+        if self.values[0] == "Messages":
+            leaderboard_data = db_manager.get_message_leaderboard()
+            title = "📩 Message Leaderboard"
+            unit = "messages"
+        else:
+            leaderboard_data = db_manager.get_voicetime_leaderboard()
+            title = "🎙️ Voice Time Leaderboard"
+            unit = "voicetime"
+
+        embed = discord.Embed(title=title, color=EMBED_COLOR_CODE)
+
+        if unit == "voicetime":
+            for rank, user in enumerate(leaderboard_data, start=1):
+                embed.add_field(name=f"#{rank} {user.username}", value=f"{round(getattr(user, unit)/60, 2)} hours", inline=False)
+        else:
+            for rank, user in enumerate(leaderboard_data, start=1):
+                embed.add_field(name=f"#{rank} {user.username}", value=f"{getattr(user, unit)} Messages", inline=False)
+
+        await interaction.response.edit_message(embed=embed, view=None)
 
 
 async def setup(bot):
