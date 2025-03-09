@@ -3,7 +3,10 @@ from discord.ext import commands
 from discord import app_commands
 
 from structures.User import User
+
 from functions.database import database
+from functions.defaults import is_tracking
+from functions.defaults import get_tracking_start_date
 
 from config import EMBED_COLOR_CODE
 from config import DATABASE_FILE_PATH
@@ -15,6 +18,93 @@ from config import DEFAULTS_JSON_FILE_PATH
 class Leaderboard(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+            
+    @app_commands.command(name="announce-winners", description="Announce the winners of the tracking period")
+    async def announce_winners(self, interaction: discord.Interaction):
+        ...
+
+    
+    @app_commands.command(name="tracking-status", description="Check if tracking is enabled")
+    async def tracking_status(self, interaction: discord.Interaction):
+        if await is_tracking():
+
+            start_date = await get_tracking_start_date()
+            num_days = round((round(interaction.created_at.timestamp()) - start_date) / 86400, 3)
+
+            embed = discord.Embed(
+                title="Tracking Status",
+                description="Tracking is currently enabled.",
+                color=EMBED_COLOR_CODE
+            )
+
+            embed.add_field(name="Tracking Period", value=f"{num_days} Days", inline=False)
+        else:
+            embed = discord.Embed(
+                title="Tracking Status",
+                description="Tracking is currently disabled.",
+                color=EMBED_COLOR_CODE
+            )
+
+        await interaction.response.send_message(embed=embed)
+
+    
+    @app_commands.command(name="reset-tracking", description="Reset the tracking data")
+    async def reset_tracking(self, interaction: discord.Interaction):
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+        data["tracking_start_date"] = round(interaction.created_at.timestamp())
+
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+
+        db = database(DATABASE_FILE_PATH)
+        db.reset_all_users()
+
+        embed = discord.Embed(
+            title="Tracking Reset",
+            description="Messages and Voicetime have been reset.",
+            color=EMBED_COLOR_CODE
+        )
+
+        await interaction.response.send_message(embed=embed)
+            
+    @app_commands.command(name="start-tracking", description="Start tracking messages and voicetime")
+    async def start_tracking(self, interaction: discord.Interaction):
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+        data["tracking_start_date"] = round(interaction.created_at.timestamp())
+
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+
+        embed = discord.Embed(
+            title="Tracking Started",
+            description="Messages and Voicetime are now being tracked.",
+            color=EMBED_COLOR_CODE
+        )
+
+        await interaction.response.send_message(embed=embed)
+
+
+    @app_commands.command(name="stop-tracking", description="Stop tracking messages and voicetime")
+    async def stop_tracking(self, interaction: discord.Interaction):
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+        data["tracking_start_date"] = 0
+
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+
+        embed = discord.Embed(
+            title="Tracking Stopped",
+            description="Messages and Voicetime are no longer being tracked.",
+            color=EMBED_COLOR_CODE
+        )
+
+        await interaction.response.send_message(embed=embed)
 
         
 

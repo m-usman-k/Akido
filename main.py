@@ -47,6 +47,7 @@ async def on_ready():
     print("🟢 | Connected to database")
 
     print("🟡 | Loading all extensions")
+    await bot.load_extension("extensions.Jail")
     await bot.load_extension("extensions.Help")
     await bot.load_extension("extensions.Events")
     await bot.load_extension("extensions.Blacklists")
