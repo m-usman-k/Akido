@@ -129,5 +129,3 @@ class database:
         UPDATE users SET jailed_roles = ? WHERE userid = ?""", (str(roles), user_id))
 
         self.conn.commit()
-
-    

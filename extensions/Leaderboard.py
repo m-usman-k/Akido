@@ -6,6 +6,7 @@ from structures.User import User
 
 from functions.database import database
 from functions.defaults import is_tracking
+from functions.defaults import stats_roles_set
 from functions.defaults import get_tracking_start_date
 
 from config import EMBED_COLOR_CODE
@@ -20,10 +21,56 @@ class Leaderboard(commands.Cog):
         self.bot = bot
             
     @app_commands.command(name="announce-winners", description="Announce the winners of the tracking period")
-    async def announce_winners(self, interaction: discord.Interaction):
-        ...
+    async def announce_winners(self, interaction: discord.Interaction, announcement_channel: discord.TextChannel):
+        if await stats_roles_set():
+            return await interaction.response.send_message(view=ConfirmationView(origional_interaction=interaction, announcement_channel=announcement_channel), ephemeral=True)
+        else:
+            embed = discord.Embed(
+                title="Stats Roles Not Set",
+                description="Please check, one of the stats roles are not set.",
+                color=EMBED_COLOR_CODE
+            )
 
-    
+            return await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="set-sub-stats-role", description="Setup the role which is to be assigned to the remaining two person of message & voice leaderboard")
+    async def set_sub_stats_role(self, interaction: discord.Interaction, role: discord.Role):
+        data = []
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+            data["sub_stats_role"] = role.id
+
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+        
+        embed = discord.Embed(
+            title="Sub Stats Role Set",
+            description=f"Role Set To {role.mention}",
+            color=EMBED_COLOR_CODE
+        )
+
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="set-top-stats-role", description="Setup the role which is to be assigned to the top 1 person of message & voice leaderboard")
+    async def set_top_stats_role(self, interaction: discord.Interaction, role: discord.Role):
+        data = []
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+            data["top_stats_role"] = role.id
+
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+        
+        embed = discord.Embed(
+            title="Top Stats Role Set",
+            description=f"Role Set To {role.mention}",
+            color=EMBED_COLOR_CODE
+        )
+
+        await interaction.response.send_message(embed=embed)
+
     @app_commands.command(name="tracking-status", description="Check if tracking is enabled")
     async def tracking_status(self, interaction: discord.Interaction):
         if await is_tracking():
@@ -47,7 +94,6 @@ class Leaderboard(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    
     @app_commands.command(name="reset-tracking", description="Reset the tracking data")
     async def reset_tracking(self, interaction: discord.Interaction):
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -87,7 +133,6 @@ class Leaderboard(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-
     @app_commands.command(name="stop-tracking", description="Stop tracking messages and voicetime")
     async def stop_tracking(self, interaction: discord.Interaction):
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -105,9 +150,7 @@ class Leaderboard(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
-
-        
-
+   
     @app_commands.command(name="user-stats", description="Check your points")
     async def user_stats(self, interaction: discord.Interaction, user: discord
     .User = None):
@@ -148,13 +191,46 @@ class Leaderboard(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    
     @app_commands.command(name="leaderboard", description="Check leaderboards for both messages and voicetime")
     async def leaderboard(self, interaction: discord.Interaction):
         view = LeaderboardView(self.bot, interaction)
         embed = discord.Embed(title="📊 Choose a Leaderboard", description="Select an option from the dropdown menu below.", color=EMBED_COLOR_CODE)
         return await interaction.response.send_message(embed=embed, view=view)
     
+
+class ConfirmationView(discord.ui.View):
+    def __init__(self, origional_interaction: discord.Interaction, announcement_channel: discord.TextChannel):
+        super().__init__(timeout=None)
+        self.origional_interaction = origional_interaction
+        self.announcement_channel = announcement_channel
+
+    @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.Button):
+        await interaction.response.defer()
+        data = []
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+
+        db = database(DATABASE_FILE_PATH)
+        message_leaderboard = db.get_message_leaderboard()
+        voice_leaderboard = db.get_voicetime_leaderboard()
+
+        top_stats_role = interaction.guild.get_role(data["top_stats_role"])
+        sub_stats_role = interaction.guild.get_role(data["sub_stats_role"])
+
+        top_3_voice_users = []
+        top_3_message_users = []
+
+        final_message = f""""""
+
+        db.reset_all_users()
+        return await self.announcement_channel.send(content=final_message)
+
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
+    async def cancel_button(self, interaction: discord.Interaction, button: discord.Button):
+        await interaction.response.defer()
+        return await self.origional_interaction.delete_original_response()
 
 class LeaderboardView(discord.ui.View):
     def __init__(self, bot, interaction):
