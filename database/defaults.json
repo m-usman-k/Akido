@@ -1,11 +1,9 @@
 {
     "max_voice_points": 130,
-    "tracking_start_date": 1741454671,
-
+    "tracking_start_date": 1741779513,
     "top_stats_role": 1348232900381904986,
     "sub_stats_role": 1348232951887826944,
     "jail_role": 1345342499643985970,
-
     "blacklists_logs_channel": 0,
     "jail_logs_channel": 0,
     "announcement_logs_channel": 0

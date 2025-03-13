@@ -13,4 +13,5 @@ BLACKLISTS_JSON_FILE_PATH = "./database/blacklists.json"
 PERMISSIONS_JSON_FILE_PATH = "./database/permissions.json"
 
 # ***** Roles/IDs *****
+GUILD_ID = 1344962258727600180
 SUPREME_USER = 1155936906274672730

@@ -6,9 +6,14 @@ from structures.User import User
 
 from functions.database import database
 from functions.defaults import is_tracking
+from functions.defaults import get_days_passed
 from functions.defaults import stats_roles_set
 from functions.defaults import get_tracking_start_date
+from functions.defaults import reset_tracking_start_date
 
+from functions.blacklists import is_person_eligible
+
+from config import GUILD_ID
 from config import EMBED_COLOR_CODE
 from config import DATABASE_FILE_PATH
 from config import DEFAULTS_JSON_FILE_PATH
@@ -23,7 +28,7 @@ class Leaderboard(commands.Cog):
     @app_commands.command(name="announce-winners", description="Announce the winners of the tracking period")
     async def announce_winners(self, interaction: discord.Interaction, announcement_channel: discord.TextChannel):
         if await stats_roles_set():
-            return await interaction.response.send_message(view=ConfirmationView(origional_interaction=interaction, announcement_channel=announcement_channel), ephemeral=True)
+            return await interaction.response.send_message(view=ConfirmationView(origional_interaction=interaction, announcement_channel=announcement_channel, bot=self.bot), ephemeral=True)
         else:
             embed = discord.Embed(
                 title="Stats Roles Not Set",
@@ -199,31 +204,98 @@ class Leaderboard(commands.Cog):
     
 
 class ConfirmationView(discord.ui.View):
-    def __init__(self, origional_interaction: discord.Interaction, announcement_channel: discord.TextChannel):
+    def __init__(self, origional_interaction: discord.Interaction, announcement_channel: discord.TextChannel, bot: commands.Bot):
         super().__init__(timeout=None)
+        self.bot = bot
         self.origional_interaction = origional_interaction
         self.announcement_channel = announcement_channel
 
     @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
     async def confirm_button(self, interaction: discord.Interaction, button: discord.Button):
         await interaction.response.defer()
-        data = []
+
+        # Load Config
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
             data = json.load(file)
 
+        # Get Database
         db = database(DATABASE_FILE_PATH)
-        message_leaderboard = db.get_message_leaderboard()
-        voice_leaderboard = db.get_voicetime_leaderboard()
+        message_leaderboard = db.get_message_leaderboard()  # List of top message users
+        voice_leaderboard = db.get_voicetime_leaderboard()  # List of top voice users
 
+        # Get Guild and Roles
+        guild = self.bot.get_guild(GUILD_ID)
         top_stats_role = interaction.guild.get_role(data["top_stats_role"])
         sub_stats_role = interaction.guild.get_role(data["sub_stats_role"])
 
-        top_3_voice_users = []
-        top_3_message_users = []
+        # Remove roles from all members before assigning new ones
+        for member in guild.members:
+            if top_stats_role in member.roles:
+                await member.remove_roles(top_stats_role)
+            if sub_stats_role in member.roles:
+                await member.remove_roles(sub_stats_role)
 
-        final_message = f""""""
+        # Find the top 3 users (regardless of eligibility)
+        top_3_messages = message_leaderboard[:3]
+        top_3_voice = voice_leaderboard[:3]
 
+        # Find the top 3 **eligible** users
+        eligible_message_users = [user for user in message_leaderboard if is_person_eligible(user.userid)]
+        eligible_voice_users = [user for user in voice_leaderboard if is_person_eligible(user.userid)]
+
+        # Assign Roles:
+        awarded_users = set()  # Track users who received a role
+
+        # Assign Top Stats Role to First Eligible User
+        if eligible_message_users:
+            first_message_eligible = guild.get_member(eligible_message_users[0].userid)
+            if first_message_eligible:
+                await first_message_eligible.add_roles(top_stats_role)
+                awarded_users.add(first_message_eligible.id)
+
+        if eligible_voice_users:
+            first_voice_eligible = guild.get_member(eligible_voice_users[0].userid)
+            if first_voice_eligible and first_voice_eligible.id not in awarded_users:
+                await first_voice_eligible.add_roles(top_stats_role)
+                awarded_users.add(first_voice_eligible.id)
+
+        # Assign Sub Stats Role to the Next Two Eligible Users
+        for eligible_users in (eligible_message_users[1:3] + eligible_voice_users[1:3]):
+            user = guild.get_member(eligible_users.userid)
+            if user and user.id not in awarded_users:
+                await user.add_roles(sub_stats_role)
+                awarded_users.add(user.id)
+
+        # Format Leaderboard Message
+        def format_leaderboard(users, stat_format):
+            leaderboard_text = ""
+            for index, user in enumerate(users):
+                member = self.bot.get_user(user.userid)
+                mention = member.mention if member else f"UserID: {user.userid}"
+                top_stats_mention = top_stats_role.mention if user.userid in awarded_users and top_stats_role in guild.get_member(user.userid).roles else ""
+                leaderboard_text += f"\n:{['first', 'second', 'third'][index]}_place: {mention} `{stat_format(user)}` {top_stats_mention}"
+            return leaderboard_text
+
+        final_message = f"""**TOP Aktivität der letzten {await get_days_passed()} Tage** :trophy:
+
+__**Chat-Nachrichten:**__\n{format_leaderboard(top_3_messages, lambda u: u.messages)}
+
+__**Voice-Channel:**__\n{format_leaderboard(top_3_voice, lambda u: f"{u.voicetime/60:.2f}h")}
+
+__**Eure Vorteile als Poweruser:**__
+✘ Eine besondere Rolle
+✘ Die Möglichkeit euren Namen zu ändern
+✘ Benutzung von GIFs
+
+**Vielen Dank für eure Aktivität!**
+**Ihr wollt auch die {top_stats_role.mention} Rolle bekommen? Dann werdet jetzt aktiv im Chat und Voice!**
+-# Teamler sind vom Erhalt der Poweruser Rolle ausgeschlossen!"""
+
+        # Reset Database Tracking
         db.reset_all_users()
+        await reset_tracking_start_date()
+
+        # Send Announcement
         return await self.announcement_channel.send(content=final_message)
 
 

@@ -1,6 +1,7 @@
 import json
 from config import PERMISSIONS_JSON_FILE_PATH
 
+
 def check_permissions_of_user(user_id, command):
     with open(PERMISSIONS_JSON_FILE_PATH, "r") as f:
         permissions = json.load(f)

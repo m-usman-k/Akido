@@ -2,6 +2,11 @@ import json
 
 from config import BLACKLISTS_JSON_FILE_PATH
 
+def is_person_eligible(item_id: int):
+    with open(BLACKLISTS_JSON_FILE_PATH, "r") as file:
+        data = json.load(file)
+
+    return (item_id in data["ineligible"]["users"] or item_id in data["ineligible"]["roles"])
 
 def is_person_blacklisted(user_id: int):
     with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
