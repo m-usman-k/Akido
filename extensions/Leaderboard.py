@@ -225,8 +225,16 @@ class ConfirmationView(discord.ui.View):
 
         # Get Guild and Roles
         guild = self.bot.get_guild(GUILD_ID)
-        top_stats_role = interaction.guild.get_role(data["top_stats_role"])
-        sub_stats_role = interaction.guild.get_role(data["sub_stats_role"])
+        if not guild:
+            print("Guild not found.")
+            return
+
+        top_stats_role = guild.get_role(data["top_stats_role"])
+        sub_stats_role = guild.get_role(data["sub_stats_role"])
+
+        if not top_stats_role or not sub_stats_role:
+            print("Roles not found.")
+            return
 
         # Remove roles from all members before assigning new ones
         for member in guild.members:
@@ -248,39 +256,66 @@ class ConfirmationView(discord.ui.View):
 
         # Assign Top Stats Role to First Eligible User
         if eligible_message_users:
-            first_message_eligible = guild.get_member(eligible_message_users[0].userid)
-            if first_message_eligible:
-                await first_message_eligible.add_roles(top_stats_role)
-                awarded_users.add(first_message_eligible.id)
+            try:
+                first_message_eligible = await guild.fetch_member(eligible_message_users[0].userid)
+                if first_message_eligible:
+                    await first_message_eligible.add_roles(top_stats_role)
+                    awarded_users.add(first_message_eligible.id)
+                    print(f"Assigned {top_stats_role.name} to {first_message_eligible.display_name}")
+            except discord.NotFound:
+                print(f"User {eligible_message_users[0].userid} not found in the guild.")
 
         if eligible_voice_users:
-            first_voice_eligible = guild.get_member(eligible_voice_users[0].userid)
-            if first_voice_eligible and first_voice_eligible.id not in awarded_users:
-                await first_voice_eligible.add_roles(top_stats_role)
-                awarded_users.add(first_voice_eligible.id)
+            try:
+                first_voice_eligible = await guild.fetch_member(eligible_voice_users[0].userid)
+                if first_voice_eligible and first_voice_eligible.id not in awarded_users:
+                    await first_voice_eligible.add_roles(top_stats_role)
+                    awarded_users.add(first_voice_eligible.id)
+                    print(f"Assigned {top_stats_role.name} to {first_voice_eligible.display_name}")
+            except discord.NotFound:
+                print(f"User {eligible_voice_users[0].userid} not found in the guild.")
 
         # Assign Sub Stats Role to the Next Two Eligible Users
-        for eligible_users in (eligible_message_users[1:3] + eligible_voice_users[1:3]):
-            user = guild.get_member(eligible_users.userid)
-            if user and user.id not in awarded_users:
-                await user.add_roles(sub_stats_role)
-                awarded_users.add(user.id)
+        for eligible_user in (eligible_message_users[1:3] + eligible_voice_users[1:3]):
+            try:
+                user = await guild.fetch_member(eligible_user.userid)
+                if user and user.id not in awarded_users:
+                    await user.add_roles(sub_stats_role)
+                    awarded_users.add(user.id)
+                    print(f"Assigned {sub_stats_role.name} to {user.display_name}")
+            except discord.NotFound:
+                print(f"User {eligible_user.userid} not found in the guild.")
 
         # Format Leaderboard Message
-        def format_leaderboard(users, stat_format):
+        async def format_leaderboard(users, stat_format):
             leaderboard_text = ""
+            seen_users = set()
+            already_mentioned = False
             for index, user in enumerate(users):
-                member = self.bot.get_user(user.userid)
-                mention = member.mention if member else f"UserID: {user.userid}"
-                top_stats_mention = top_stats_role.mention if user.userid in awarded_users and top_stats_role in guild.get_member(user.userid).roles else ""
-                leaderboard_text += f"\n:{['first', 'second', 'third'][index]}_place: {mention} `{stat_format(user)}` {top_stats_mention}"
+                try:
+                    member = await guild.fetch_member(user.userid)
+                    mention = member.mention if member else f"UserID: {user.userid}"
+
+                    # Only mention the role the first time the user appears
+                    role_mention = ""
+                    if user.userid in awarded_users and user.userid not in seen_users and not already_mentioned:
+                        role_mention = f" {top_stats_role.mention}"
+                        already_mentioned = True
+                        seen_users.add(user.userid)  # Mark user as seen
+
+                    leaderboard_text += f"\n:{['first', 'second', 'third'][index]}_place: {mention} `{stat_format(user)}`{role_mention}"
+                except discord.NotFound:
+                    leaderboard_text += f"\n:{['first', 'second', 'third'][index]}_place: UserID: {user.userid} `{stat_format(user)}`"
+
             return leaderboard_text
+
+
 
         final_message = f"""**TOP Aktivität der letzten {await get_days_passed()} Tage** :trophy:
 
-__**Chat-Nachrichten:**__\n{format_leaderboard(top_3_messages, lambda u: u.messages)}
+__**Chat-Nachrichten:**__\n{await format_leaderboard(top_3_messages, lambda u: u.messages)}
 
-__**Voice-Channel:**__\n{format_leaderboard(top_3_voice, lambda u: f"{u.voicetime/60:.2f}h")}
+__**Voice-Channel:**__\n{await format_leaderboard(top_3_voice, lambda u: f"{u.voicetime/60:.2f}h")}
 
 __**Eure Vorteile als Poweruser:**__
 ✘ Eine besondere Rolle

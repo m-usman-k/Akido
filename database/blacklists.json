@@ -1,14 +1,16 @@
 {
-  "blacklists": {
-    "channels": {
-      "text": [],
-      "voice": []
+    "blacklists": {
+        "channels": {
+            "text": [],
+            "voice": []
+        },
+        "users": [],
+        "roles": []
     },
-    "users": [],
-    "roles": []
-  },
-  "ineligible": {
-    "users": [],
-    "roles": []
-  }
+    "ineligible": {
+        "users": [
+            1155936906274672730
+        ],
+        "roles": []
+    }
 }
