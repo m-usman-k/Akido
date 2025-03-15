@@ -4,7 +4,7 @@ from discord import app_commands
 
 from config import EMBED_COLOR_CODE
 from config import BLACKLISTS_JSON_FILE_PATH
-
+from functions.permissions import check_permission
 
 class Blacklists(commands.Cog):
     def __init__(self, bot):
@@ -12,6 +12,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="blacklist-voice-channel", description="Blacklist a voice channel")
     async def blacklist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "blacklist-voice-channel"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
 
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -55,6 +58,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="whitelist-voice-channel", description="Whitelist a voice channel")
     async def whitelist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "whitelist-voice-channel"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -98,6 +104,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="blacklist-text-channel", description="Blacklist a text channel")
     async def blacklist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "blacklist-text-channel"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -141,6 +150,9 @@ class Blacklists(commands.Cog):
     
     @app_commands.command(name="whitelist-text-channel", description="Whitelist a text channel")
     async def whitelist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "whitelist-text-channel"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -184,6 +196,9 @@ class Blacklists(commands.Cog):
     
     @app_commands.command(name="blacklist-user", description="Blacklist a user")
     async def blacklist_user(self, interaction: discord.Interaction, user: discord.User):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "blacklist-user"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -227,6 +242,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="whitelist-user", description="Whitelist a user")
     async def whitelist_user(self, interaction: discord.Interaction, user: discord.User):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "whitelist-user"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -270,6 +288,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="blacklist-role", description="Blacklist a role")
     async def blacklist_role(self, interaction: discord.Interaction, role: discord.Role):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "blacklist-role"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -313,6 +334,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="whitelist-role", description="Whitelist a role")
     async def whitelist_role(self, interaction: discord.Interaction, role: discord.Role):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "whitelist-role"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -356,6 +380,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="restrict-user" ,description="Restrict a user from getting the reward roles")
     async def restrict_user(self, interaction: discord.Interaction, user: discord.User):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "restrict-user"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -399,6 +426,9 @@ class Blacklists(commands.Cog):
     
     @app_commands.command(name="unrestrict-user", description="Unrestrict a user from getting the reward roles")
     async def unrestrict_user(self, interaction: discord.Interaction, user: discord.User):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "unrestrict-user"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -442,6 +472,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="restrict-role", description="Restrict a role from getting the reward roles")
     async def restrict_role(self, interaction: discord.Interaction, role: discord.Role):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "restrict-role"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -485,6 +518,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="unrestrict-role", description="Unrestrict a role from getting the reward roles")
     async def unrestrict_role(self, interaction: discord.Interaction, role: discord.Role):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "unrestrict-role"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -528,6 +564,9 @@ class Blacklists(commands.Cog):
 
     @app_commands.command(name="blacklist-info", description="Get information about the blacklists")
     async def blacklist_info(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "blacklist-info"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
             with open(BLACKLISTS_JSON_FILE_PATH, "r") as f:
@@ -547,32 +586,32 @@ class Blacklists(commands.Cog):
 
             embed.add_field(
                 name="Text Channels",
-                value="\n".join([channel.mention for channel in text_channels]) if text_channels else "None"
+                value="\n".join([channel.mention for channel in text_channels if channel]) if text_channels else "None"
             )
 
             embed.add_field(
                 name="Voice Channels",
-                value="\n".join([channel.mention for channel in voice_channels]) if voice_channels else "None"
+                value="\n".join([channel.mention for channel in voice_channels if channel]) if voice_channels else "None"
             )
 
             embed.add_field(
                 name="Users",
-                value="\n".join([user.mention for user in users]) if users else "None"
+                value="\n".join([user.mention for user in users if user]) if users else "None"
             )
 
             embed.add_field(
                 name="Roles",
-                value="\n".join([role.mention for role in roles]) if roles else "None"
+                value="\n".join([role.mention for role in roles if role]) if roles else "None"
             )
 
             embed.add_field(
                 name="Ineligible Users",
-                value="\n".join([user.mention for user in ineligible_users]) if ineligible_users else "None"
+                value="\n".join([user.mention for user in ineligible_users if user]) if ineligible_users else "None"
             )
 
             embed.add_field(
                 name="Ineligible Roles",
-                value="\n".join([role.mention for role in ineligible_roles]) if ineligible_roles else "None"
+                value="\n".join([role.mention for role in ineligible_roles if role]) if ineligible_roles else "None"
             )
 
             await interaction.response.send_message(embed=embed)

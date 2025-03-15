@@ -9,6 +9,7 @@ from functions.database import database
 
 from functions.defaults import is_tracking
 from functions.defaults import get_tracking_start_date
+from functions.permissions import check_permission
 
 from functions.jail import get_jail_role
 from functions.jail import is_person_jailed
@@ -34,9 +35,15 @@ class Events(commands.Cog):
             data = json.load(file)
 
         return data["jail_role"]
+    
+    async def is_alone_voice_enabled(self):
+        """Check if alone voice tracking is enabled"""
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+        
+        return data.get("alone_voice_enabled", True)  # Default to True if not set
 
     async def grant_voicetime(self, member: discord.Member):
-
         """Grant XP every minute while in VC, stopping at 120 minutes."""
         while member.id in self.voice_users:
             await asyncio.sleep(60)  # Wait for 1 minute
@@ -50,6 +57,16 @@ class Events(commands.Cog):
 
                 max_voice_points = data["max_voice_points"]
                 
+                # Check if user is alone in voice channel and if alone voice is disabled
+                alone_in_voice = len(member.voice.channel.members) == 1
+                alone_voice_enabled = await self.is_alone_voice_enabled()
+                
+                if alone_in_voice and not alone_voice_enabled:
+                    # Skip giving points if alone and alone voice is disabled
+                    print(f"🔴 | {member.name} is alone in voice channel and alone voice tracking is disabled")
+                    user_data["total_minutes"] += 1
+                    self.voice_users[member.id] = user_data
+                    continue
 
                 if user_data["total_minutes"] < max_voice_points:
                     user_data["total_minutes"] += 1
@@ -70,6 +87,38 @@ class Events(commands.Cog):
                 del self.voice_users[member.id]
                 break
 
+    @app_commands.command(name="toggle-alone-voice", description="Toggle whether users alone in voice channels should receive points")
+    async def toggle_alone_voice(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "toggle-alone-voice"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+        
+        # Load current settings
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+        
+        # Toggle the setting (default to True if not set)
+        current_setting = data.get("alone_voice_enabled", True)
+        data["alone_voice_enabled"] = not current_setting
+        
+        # Save the updated settings
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+        
+        # Create response embed
+        embed = discord.Embed(
+            title="Alone Voice Setting",
+            description=f"Alone voice tracking has been {'enabled' if data['alone_voice_enabled'] else 'disabled'}.",
+            color=EMBED_COLOR_CODE
+        )
+        
+        embed.add_field(
+            name="What this means",
+            value="When enabled, users who are alone in voice channels will receive points.\nWhen disabled, users must have at least one other person in the voice channel to receive points.",
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=embed)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -110,6 +159,24 @@ class Events(commands.Cog):
                 if role:
                     await member.add_roles(role)
                     print(f"Reassigned jail role to {member.name} ({member.id})")
+                
+                    # Send notification to jail logs
+                    # Get the jail logs channel
+                    with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+                        data = json.load(file)
+                    log_channel_id = data.get("jail_logs_channel")
+                    if log_channel_id:
+                        log_channel = guild.get_channel(log_channel_id)
+                        if log_channel:
+                            embed = discord.Embed(
+                                title="⚠️ Jailed User Rejoined",
+                                description=f"{member.mention} has rejoined the server while jailed.",
+                                color=discord.Color.gold()  # Gold color for the embed
+                            )
+                            embed.add_field(name="User ID", value=member.id, inline=False)
+                            embed.add_field(name="Action Taken", value="Jail role has been automatically reapplied", inline=False)
+                            embed.timestamp = datetime.datetime.utcnow()
+                            await log_channel.send(embed=embed)
                 else:
                     print(f"Jail role with ID {role_id} not found in {guild.name}.")
             else:
@@ -135,9 +202,6 @@ class Events(commands.Cog):
             if added_roles:
                 await after.remove_roles(*added_roles)
                 print(f"Removed unauthorized roles from jailed user {after.name} ({after.id})")
-
-
-            
 
 async def setup(bot):
     await bot.add_cog(Events(bot=bot))

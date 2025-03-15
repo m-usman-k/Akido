@@ -6,6 +6,8 @@ from config import SUPREME_USER
 from config import EMBED_COLOR_CODE
 from config import PERMISSIONS_JSON_FILE_PATH
 
+from functions.permissions import check_permission, initialize_permissions
+
 class Permissions(commands.Cog):
     def __init__(self, bot: commands.Bot):
         super().__init__()
@@ -14,8 +16,12 @@ class Permissions(commands.Cog):
     # Commands:
     @app_commands.command(name="display-permissions", description="Displays permissions of users and roles for a specific command.")
     async def display_permissions(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "display-permissions"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+            
         if interaction.user.id != SUPREME_USER:
-            return await interaction.response.send_message("🔴 This Command Is Forbidden For You 🔴", ephemeral=False)
+            return await interaction.response.send_message("🔴 This Command Is Forbidden For You ���", ephemeral=False)
 
         with open(PERMISSIONS_JSON_FILE_PATH, "r") as f:
             all_permissions = json.load(f)
@@ -25,9 +31,31 @@ class Permissions(commands.Cog):
 
         await interaction.response.send_message("Select a command to view its permissions:", view=view, ephemeral=False)
         
+    @app_commands.command(name="initialize-permissions", description="Initialize the permissions system with all available commands.")
+    async def initialize_permissions_command(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "initialize-permissions"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+            
+        if interaction.user.id != SUPREME_USER:
+            return await interaction.response.send_message("🔴 This Command Is Forbidden For You 🔴", ephemeral=True)
+        
+        await initialize_permissions(self.bot)
+        
+        embed = discord.Embed(
+            title="Permissions Initialized",
+            description="All commands have been added to the permissions system.",
+            color=EMBED_COLOR_CODE
+        )
+        
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
     @app_commands.command(name="set-permission", description="A command to set permissions of users and roles to certain commands.")
     async def set_permission(self, interaction: discord.Interaction, role: discord.Role = None, user: discord.User = None):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "set-permission"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+            
         if interaction.user.id != SUPREME_USER:
             return await interaction.response.send_message("🔴This Command Is Forbidden For You🔴")
 
@@ -160,3 +188,4 @@ class CommandSelectionDropdown(discord.ui.Select):
 
 async def setup(bot):
     await bot.add_cog(Permissions(bot=bot))
+

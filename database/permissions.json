@@ -8,5 +8,170 @@
         "command": "settings",
         "users": [],
         "roles": []
+    },
+    {
+        "command": "display-permissions",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "initialize-permissions",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-permission",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "blacklist-voice-channel",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "whitelist-voice-channel",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "blacklist-text-channel",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "whitelist-text-channel",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "blacklist-user",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "whitelist-user",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "blacklist-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "whitelist-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "restrict-user",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "unrestrict-user",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "restrict-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "unrestrict-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "blacklist-info",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-jail-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-jail-logs",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "jail",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "unjail",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-announcement-logs",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "show-test-announcement",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "reset-tracking",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "start-tracking",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "stop-tracking",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "user-stats",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-max-voicetime",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "leaderboard",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "announce-winners",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-sub-stats-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "set-top-stats-role",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "tracking-status",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "toggle-alone-voice",
+        "users": [],
+        "roles": []
     }
 ]
