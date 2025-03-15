@@ -562,10 +562,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="blacklist-info", description="Get information about the blacklists")
+    @app_commands.command(name="poweruser-blacklist-info", description="Get information about the blacklists of poweruser function")
     async def blacklist_info(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "blacklist-info"):
+        if not await check_permission(interaction, "poweruser-blacklist-info"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:

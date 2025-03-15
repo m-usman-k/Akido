@@ -55,7 +55,7 @@ class Jail(commands.Cog):
             embed = discord.Embed(
                 title="User Auto-Unjailed",
                 description=f"{user.mention} has been unjailed after {duration} minutes.",
-                color=EMBED_COLOR_CODE
+                color=discord.Color.green()
             )
             await log_channel.send(embed=embed)
             
@@ -70,6 +70,41 @@ class Jail(commands.Cog):
         except:
             # User might have DMs disabled
             pass
+
+    @app_commands.command(name="jail-info", description="Shows the current jail role and log channel settings")
+    async def jail_info(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "jail-info"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+        
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+        
+        jail_role_id = data.get("jail_role", 0)
+        jail_logs_channel_id = data.get("jail_logs_channel")
+        
+        jail_role = interaction.guild.get_role(jail_role_id) if jail_role_id else None
+        jail_logs_channel = interaction.guild.get_channel(jail_logs_channel_id) if jail_logs_channel_id else None
+        
+        embed = discord.Embed(
+            title="Jail System Information",
+            description="Current settings for the jail system",
+            color=EMBED_COLOR_CODE
+        )
+        
+        embed.add_field(
+            name="Jail Role",
+            value=f"{jail_role.mention}" if jail_role else "Not set",
+            inline=False
+        )
+        
+        embed.add_field(
+            name="Jail Logs Channel",
+            value=f"{jail_logs_channel.mention}" if jail_logs_channel else "Not set",
+            inline=False
+        )
+        
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="set-jail-role", description="Set the role that will be used for jailed users.")
     async def set_jail_role(self, interaction: discord.Interaction, role: discord.Role):
@@ -362,3 +397,4 @@ class UnjailConfirmationView(discord.ui.View):
 
 async def setup(bot):
     await bot.add_cog(Jail(bot=bot))
+

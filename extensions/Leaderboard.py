@@ -51,7 +51,6 @@ class Leaderboard(commands.Cog):
                 embed.add_field(name="Days Since Announcement", value=f"{days_passed} days", inline=False)
             
             embed.timestamp = datetime.now()
-            embed.set_footer(text=f"Performed by: {self.bot.user.name}")
 
             await log_channel.send(embed=embed)
 
@@ -61,7 +60,7 @@ class Leaderboard(commands.Cog):
         if log_channel and role_changes:
             embed = discord.Embed(
                 title="Leaderboard Role Changes",
-                description=f"Role changes after {days_passed} days since the last announcement",
+                description=f"Role changes after {days_passed} days of tracking.",
                 color=EMBED_COLOR_CODE
             )
             
@@ -75,7 +74,7 @@ class Leaderboard(commands.Cog):
                         removed_text += f"• {role.mention} removed from {user.mention}\n"
                 
                 if removed_text:
-                    embed.add_field(name=f"Roles Removed (After {days_passed} Days)", value=removed_text, inline=False)
+                    embed.add_field(name=f"Removed", value=removed_text, inline=False)
             
             # Add added roles section if any
             if role_changes["added"]:
@@ -87,10 +86,9 @@ class Leaderboard(commands.Cog):
                         added_text += f"• {role.mention} added to {user.mention}\n"
                 
                 if added_text:
-                    embed.add_field(name=f"Roles Added (After {days_passed} Days)", value=added_text, inline=False)
+                    embed.add_field(name=f"Added", value=added_text, inline=False)
             
             embed.timestamp = datetime.now()
-            embed.set_footer(text=f"Performed by: {self.bot.user.name}")
             
             await log_channel.send(embed=embed)
 
@@ -100,19 +98,26 @@ class Leaderboard(commands.Cog):
         log_channel = await self.get_log_channel(guild)
         
         if log_channel:
+            title = ""
+            description = ""
+            
+            if action == "Started" or action == "Stopped" or action == "Reset":
+                title = f"Tracking {action}"
+                description = f"Tracking {action} by {interaction.user.mention}"
+            elif action == "Announced and Reset":
+                title = "Announcement"
+                description = "Announcement has been sent.\nLeaderboard has been reset."
+
             embed = discord.Embed(
-                title=f"Tracking {action}",
-                description=f"Tracking was {action.lower()} by {interaction.user.mention} ({interaction.user.id})",
-                color=discord.Color.green() if action == "Started" else 
-                      discord.Color.red() if action == "Stopped" else 
-                      discord.Color.gold()
+                title=title,
+                description=description,
+                color=EMBED_COLOR_CODE
             )
             
             if additional_info:
                 embed.add_field(name="Additional Information", value=additional_info, inline=False)
                 
             embed.timestamp = datetime.now()
-            embed.set_footer(text=f"Command executed by: {interaction.user.name}")
             
             await log_channel.send(embed=embed)
 
@@ -163,9 +168,9 @@ class Leaderboard(commands.Cog):
 
         final_message = f"""**TOP Aktivität der letzten {days_passed} Tage** :trophy:
 
-__**Chat-Nachrichten:**__{message_leaderboard_text}
+__**Chat-Nachrichten:**__\n{message_leaderboard_text}
 
-__**Voice-Channel:**__{voice_leaderboard_text}
+__**Voice-Channel:**__\n{voice_leaderboard_text}
 
 __**Eure Vorteile als Poweruser:**__
 ✘ Eine besondere Rolle
@@ -608,10 +613,46 @@ __**Eure Vorteile als Poweruser:**__
         
         embed = discord.Embed(
             title="Sub Stats Role Set",
-            description=f"Role Set To {role.mention}",
+            description=f"Role set to {role.mention}",
             color=EMBED_COLOR_CODE
         )
 
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(name="remove-sub-stats-role", description="Remove the sub stats role from the settings")
+    async def remove_sub_stats_role(self, interaction: discord.Interaction):
+        # Check if user has permission to use this command
+        if not await check_permission(interaction, "remove-sub-stats-role"):
+            return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
+        
+        with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
+            data = json.load(file)
+        
+        # Check if sub stats role is set
+        if "sub_stats_role" not in data or data.get("sub_stats_role", 0) == 0:
+            embed = discord.Embed(
+                title="Sub Stats Role Not Set",
+                description="There is no sub stats role currently set.",
+                color=discord.Color.red()
+            )
+            return await interaction.response.send_message(embed=embed)
+        
+        # Get the role for the message
+        sub_stats_role = interaction.guild.get_role(data["sub_stats_role"])
+        role_mention = sub_stats_role.mention if sub_stats_role else f"Role ID: {data['sub_stats_role']}"
+        
+        # Remove the sub stats role from the settings
+        data.pop("sub_stats_role", None)
+        
+        with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
+            json.dump(data, file, indent=4)
+        
+        embed = discord.Embed(
+            title="Sub Stats Role Removed",
+            description=f"The sub stats role ({role_mention}) has been removed from the settings.",
+            color=EMBED_COLOR_CODE
+        )
+        
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="set-top-stats-role", description="Setup the role which is to be assigned to the top 1 person of message & voice leaderboard")
@@ -631,7 +672,7 @@ __**Eure Vorteile als Poweruser:**__
         
         embed = discord.Embed(
             title="Top Stats Role Set",
-            description=f"Role Set To {role.mention}",
+            description=f"Role set to {role.mention}",
             color=EMBED_COLOR_CODE
         )
 
@@ -664,10 +705,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="settings", description="Display all settings and configurations")
-    async def settings(self, interaction: discord.Interaction):
+    @app_commands.command(name="poweruser-settings", description="Display all settings and configurations for poweruser function")
+    async def poweruser_settings(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "settings"):
+        if not await check_permission(interaction, "poweruser-settings"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         # Load all settings
@@ -683,7 +724,7 @@ __**Eure Vorteile als Poweruser:**__
         # Create embed
         embed = discord.Embed(
             title="Settings / Overview",
-            color=discord.Color.blue()
+            color=EMBED_COLOR_CODE
         )
         
         # Blacklisted Roles
@@ -694,8 +735,47 @@ __**Eure Vorteile als Poweruser:**__
                 blacklisted_roles.append(role.mention)
         
         embed.add_field(
-            name="Black listed roles",
+            name="Blacklisted Roles",
             value="\n".join(blacklisted_roles) if blacklisted_roles else "None",
+            inline=True
+        )
+
+        # Blacklisted Users
+        blacklisted_users = []
+        for role_id in blacklists_data["blacklists"]["users"]:
+            role = guild.get_role(role_id)
+            if role:
+                blacklisted_users.append(role.mention)
+        
+        embed.add_field(
+            name="Blacklisted Users",
+            value="\n".join(blacklisted_users) if blacklisted_users else "None",
+            inline=True
+        )
+
+        # Uneligible Roles
+        ineligible_roles = []
+        for role_id in blacklists_data["ineligible"]["roles"]:
+            role = guild.get_role(role_id)
+            if role:
+                ineligible_roles.append(role.mention)
+        
+        embed.add_field(
+            name="Ineligible Roles",
+            value="\n".join(ineligible_roles) if ineligible_roles else "None",
+            inline=True
+        )
+
+        # Uneligible Roles
+        ineligible_users = []
+        for role_id in blacklists_data["ineligible"]["users"]:
+            role = guild.get_role(role_id)
+            if role:
+                ineligible_users.append(role.mention)
+        
+        embed.add_field(
+            name="Ineligible Users",
+            value="\n".join(ineligible_users) if ineligible_users else "None",
             inline=True
         )
         
@@ -707,7 +787,7 @@ __**Eure Vorteile als Poweruser:**__
                 blacklisted_channels.append(channel.mention)
         
         embed.add_field(
-            name="Black listed channels",
+            name="Blacklisted Channels",
             value="\n".join(blacklisted_channels) if blacklisted_channels else "None",
             inline=True
         )
@@ -743,20 +823,6 @@ __**Eure Vorteile als Poweruser:**__
             inline=True
         )
         
-        # Time Left
-        if await is_tracking():
-            start_date = await get_tracking_start_date()
-            time_passed = round(interaction.created_at.timestamp() - start_date, 2)
-            time_left = f"{time_passed/3600:.2f}h"
-        else:
-            time_left = "Tracking disabled"
-        
-        embed.add_field(
-            name="Time Left",
-            value=time_left,
-            inline=True
-        )
-        
         # Alone Voice Status
         alone_voice_enabled = defaults_data.get("alone_voice_enabled", True)
         embed.add_field(
@@ -773,13 +839,6 @@ __**Eure Vorteile als Poweruser:**__
             inline=True
         )
         
-        # Announce Channel
-        announcement_channel = guild.get_channel(defaults_data.get("announcement_channel", 0))
-        embed.add_field(
-            name="Announce Channel",
-            value=announcement_channel.mention if announcement_channel else "Not set",
-            inline=True
-        )
         
         # Time Range (total tracking period)
         if await is_tracking():
@@ -790,7 +849,7 @@ __**Eure Vorteile als Poweruser:**__
             time_range = "Tracking disabled"
         
         embed.add_field(
-            name="Time Range",
+            name="Tracking Time",
             value=time_range,
             inline=True
         )
@@ -971,10 +1030,11 @@ __**Eure Vorteile als Poweruser:**__
             await leaderboard_cog.log_tracking_action(
                 interaction,
                 "Announced and Reset",
-                f"Leaderboard was announced in {self.announcement_channel.mention} after {days_passed} days of tracking.\n"
-                f"Top message user: {eligible_message_users[0].username if eligible_message_users else 'None'}\n"
-                f"Top voice user: {eligible_voice_users[0].username if eligible_voice_users else 'None'}\n"
-                f"Total roles assigned: {len(role_changes['added'])}"
+                # f"Leaderboard was announced in {self.announcement_channel.mention} after {days_passed} days of tracking.\n"
+                # f"Top message user: {eligible_message_users[0].username if eligible_message_users else 'None'}\n"
+                # f"Top voice user: {eligible_voice_users[0].username if eligible_voice_users else 'None'}\n"
+                # f"Total roles assigned: {len(role_changes['added'])}"
+                f"**Executed by**\n{interaction.user.mention}\n\n**Channel**\n{interaction.channel.mention}\n\n**Tracking Time**\n{days_passed} day(s)\n\n**Top Users**\nMessages: {self.bot.get_user(eligible_message_users[0].userid) if eligible_message_users else 'None'}\nVoice: {self.bot.get_user(eligible_voice_users[0].userid) if eligible_voice_users else 'None'}"
             )
 
         # Send Announcement
@@ -1032,4 +1092,3 @@ class LeaderboardSelect(discord.ui.Select):
 
 async def setup(bot):
     await bot.add_cog(Leaderboard(bot=bot))
-

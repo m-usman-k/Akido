@@ -21,13 +21,13 @@ class Permissions(commands.Cog):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         if interaction.user.id != SUPREME_USER:
-            return await interaction.response.send_message("🔴 This Command Is Forbidden For You ���", ephemeral=False)
+            return await interaction.response.send_message("🔴 This Command Is Forbidden For You 🔴", ephemeral=False)
 
         with open(PERMISSIONS_JSON_FILE_PATH, "r") as f:
             all_permissions = json.load(f)
 
         commands_list = [cmd["command"] for cmd in all_permissions]
-        view = PermissionsView(commands_list)
+        view = PaginatedPermissionsView(commands_list)
 
         await interaction.response.send_message("Select a command to view its permissions:", view=view, ephemeral=False)
         
@@ -38,7 +38,7 @@ class Permissions(commands.Cog):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         if interaction.user.id != SUPREME_USER:
-            return await interaction.response.send_message("🔴 This Command Is Forbidden For You 🔴", ephemeral=True)
+            return await interaction.response.send_message("🔴 This Command Is Forbidden For You 🔴", ephemeral=False)
         
         await initialize_permissions(self.bot)
         
@@ -71,10 +71,22 @@ class Permissions(commands.Cog):
         await interaction.response.send_message("Select an action:", view=view, ephemeral=True)
 
 # Views:
+class PaginatedPermissionsView(discord.ui.View):
+    def __init__(self, commands_list):
+        super().__init__()
+        
+        # Split commands into chunks of 25 (Discord's limit for dropdown options)
+        chunks = [commands_list[i:i + 25] for i in range(0, len(commands_list), 25)]
+        
+        # Add a dropdown for each chunk
+        for i, chunk in enumerate(chunks):
+            dropdown = PermissionsDropdown(chunk, i+1, len(chunks))
+            self.add_item(dropdown)
+
 class PermissionsView(discord.ui.View):
     def __init__(self, commands_list):
         super().__init__()
-        self.add_item(PermissionsDropdown(commands_list))
+        self.add_item(PermissionsDropdown(commands_list, 1, 1))
 
 class PermissionActionView(discord.ui.View):
     def __init__(self, commands_list, role, user):
@@ -83,9 +95,10 @@ class PermissionActionView(discord.ui.View):
 
 # Select Menus:
 class PermissionsDropdown(discord.ui.Select):
-    def __init__(self, commands_list):
+    def __init__(self, commands_list, page_num=1, total_pages=1):
+        placeholder = f"Select a command... (Page {page_num}/{total_pages})"
         options = [discord.SelectOption(label=cmd, value=cmd) for cmd in commands_list]
-        super().__init__(placeholder="Select a command...", options=options, min_values=1, max_values=1)
+        super().__init__(placeholder=placeholder, options=options, min_values=1, max_values=1)
 
     async def callback(self, interaction: discord.Interaction):
         with open(PERMISSIONS_JSON_FILE_PATH, "r") as f:
@@ -135,8 +148,22 @@ class PermissionActionDropdown(discord.ui.Select):
                     return await interaction.response.send_message(embed=embed, ephemeral=True)
         else:
             commands_list = self.commands_list
-        view = CommandSelectionView(commands_list, self.role, self.user, action)
+        
+        # Use PaginatedCommandSelectionView for command selection
+        view = PaginatedCommandSelectionView(commands_list, self.role, self.user, action)
         await interaction.response.edit_message(content="Select a command:", view=view)
+
+class PaginatedCommandSelectionView(discord.ui.View):
+    def __init__(self, commands_list, role, user, action):
+        super().__init__()
+        
+        # Split commands into chunks of 25 (Discord's limit for dropdown options)
+        chunks = [commands_list[i:i + 25] for i in range(0, len(commands_list), 25)]
+        
+        # Add a dropdown for each chunk
+        for i, chunk in enumerate(chunks):
+            dropdown = CommandSelectionDropdown(chunk, role, user, action, i+1, len(chunks))
+            self.add_item(dropdown)
 
 class CommandSelectionView(discord.ui.View):
     def __init__(self, commands_list, role, user, action):
@@ -144,12 +171,14 @@ class CommandSelectionView(discord.ui.View):
         self.add_item(CommandSelectionDropdown(commands_list, role, user, action))
 
 class CommandSelectionDropdown(discord.ui.Select):
-    def __init__(self, commands_list, role, user, action):
+    def __init__(self, commands_list, role, user, action, page_num=1, total_pages=1):
         self.role = role
         self.user = user
         self.action = action
+        
+        placeholder = f"Select a command... (Page {page_num}/{total_pages})"
         options = [discord.SelectOption(label=cmd, value=cmd) for cmd in commands_list]
-        super().__init__(placeholder="Select a command...", options=options, min_values=1, max_values=1)
+        super().__init__(placeholder=placeholder, options=options, min_values=1, max_values=1)
 
     async def callback(self, interaction: discord.Interaction):
         selected_command = self.values[0]
@@ -188,4 +217,3 @@ class CommandSelectionDropdown(discord.ui.Select):
 
 async def setup(bot):
     await bot.add_cog(Permissions(bot=bot))
-

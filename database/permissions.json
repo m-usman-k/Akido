@@ -5,7 +5,7 @@
         "roles": []
     },
     {
-        "command": "settings",
+        "command": "poweruser-settings",
         "users": [],
         "roles": []
     },
@@ -85,7 +85,7 @@
         "roles": []
     },
     {
-        "command": "blacklist-info",
+        "command": "poweruser-blacklist-info",
         "users": [],
         "roles": []
     },
@@ -171,6 +171,16 @@
     },
     {
         "command": "toggle-alone-voice",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "jail-info",
+        "users": [],
+        "roles": []
+    },
+    {
+        "command": "remove-sub-stats-role",
         "users": [],
         "roles": []
     }
