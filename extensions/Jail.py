@@ -122,7 +122,7 @@ class Jail(commands.Cog):
 
         embed = discord.Embed(
             title="Jail Role Set",
-            description=f"The jail role has been set to {role.mention}.",
+            description=f"The jail role has been set to {role.mention}",
             color=EMBED_COLOR_CODE
         )
         await interaction.response.send_message(embed=embed)
@@ -143,7 +143,7 @@ class Jail(commands.Cog):
 
         embed = discord.Embed(
             title="Jail Logs Channel Set",
-            description=f"The jail logs channel has been set to {channel.mention}.",
+            description=f"The jail logs channel has been set to {channel.mention}",
             color=EMBED_COLOR_CODE
         )
         await interaction.response.send_message(embed=embed)
@@ -397,4 +397,3 @@ class UnjailConfirmationView(discord.ui.View):
 
 async def setup(bot):
     await bot.add_cog(Jail(bot=bot))
-
