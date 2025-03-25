@@ -1,9 +1,9 @@
 {
-    "max_voice_points": 130,
-    "tracking_start_date": 1741960377,
-    "top_stats_role": 1348232900381904986,
-    "sub_stats_role": 1348232951887826944,
-    "jail_role": 1345342499643985970,
-    "jail_logs_channel": 1349908695068184743,
-    "announcement_logs_channel": 1349908727519645788
+    "max_voice_points": 999999,
+    "tracking_start_date": 1742935011,
+    "top_stats_role": 1034784510824427530,
+    "jail_role": 1001755808289267742,
+    "jail_logs_channel": 1001873278601809950,
+    "announcement_logs_channel": 1044280542075568179,
+    "alone_voice_enabled": true
 }
