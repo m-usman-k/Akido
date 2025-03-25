@@ -121,6 +121,36 @@ class Leaderboard(commands.Cog):
             
             await log_channel.send(embed=embed)
 
+    async def is_member_eligible(self, member_id):
+        """Check if a member is eligible for poweruser role by checking their roles"""
+        # First use the original is_person_eligible function
+        if not is_person_eligible(member_id):
+            print(f"🛑 | User ID {member_id} is not eligible (from is_person_eligible)")
+            return False
+            
+        # Then check if the member has any restricted roles
+        guild = self.bot.get_guild(GUILD_ID)
+        if not guild:
+            print(f"❌ | Guild not found")
+            return False
+            
+        member = guild.get_member(member_id)
+        if not member:
+            print(f"❌ | Member {member_id} not found in guild")
+            return False
+            
+        # Load the blacklists data
+        with open(BLACKLISTS_JSON_FILE_PATH, "r") as file:
+            blacklists_data = json.load(file)
+            
+        # Check if any of the member's roles are in the ineligible roles list
+        for role in member.roles:
+            if role.id in blacklists_data["ineligible"]["roles"]:
+                print(f"🛑 | User {member.name} has ineligible role {role.name} (ID: {role.id})")
+                return False
+                
+        return True
+
     async def generate_announcement_preview(self, guild: discord.Guild):
         """Generate a preview of what the announcement would look like."""
         # Get Database
@@ -142,9 +172,20 @@ class Leaderboard(commands.Cog):
         top_3_messages = message_leaderboard[:3]
         top_3_voice = voice_leaderboard[:3]
 
-        # Find the top 3 **eligible** users
-        eligible_message_users = [user for user in message_leaderboard if is_person_eligible(user.userid)]
-        eligible_voice_users = [user for user in voice_leaderboard if is_person_eligible(user.userid)]
+        # Find the top 3 **eligible** users - use the new method
+        eligible_message_users = []
+        for user in message_leaderboard:
+            if await self.is_member_eligible(user.userid):
+                eligible_message_users.append(user)
+                if len(eligible_message_users) >= 3:
+                    break
+                    
+        eligible_voice_users = []
+        for user in voice_leaderboard:
+            if await self.is_member_eligible(user.userid):
+                eligible_voice_users.append(user)
+                if len(eligible_voice_users) >= 3:
+                    break
 
         # Format Leaderboard Message
         async def format_leaderboard_preview(users, stat_format):
@@ -164,22 +205,20 @@ class Leaderboard(commands.Cog):
         days_passed = await get_days_passed()
         
         message_leaderboard_text = await format_leaderboard_preview(top_3_messages, lambda u: u.messages)
-        voice_leaderboard_text = await format_leaderboard_preview(top_3_voice, lambda u: f"{u.voicetime/60:.2f}h")
+        voice_leaderboard_text = await format_leaderboard_preview(top_3_voice, lambda u: f"{round(u.voicetime/60)}h")
 
-        final_message = f"""**TOP Aktivität der letzten {days_passed} Tage** :trophy:
+        final_message = f"""## **TOP Aktivität der letzten {days_passed} Tage** :trophy:
+### Textnachrichten\n{message_leaderboard_text}
+### Sprachaktivität\n{voice_leaderboard_text}
 
-__**Chat-Nachrichten:**__\n{message_leaderboard_text}
-
-__**Voice-Channel:**__\n{voice_leaderboard_text}
-
-__**Eure Vorteile als Poweruser:**__
+__**Eure Vorteile als Poweruser**__
 ✘ Eine besondere Rolle
 ✘ Die Möglichkeit euren Namen zu ändern
 ✘ Benutzung von GIFs
 
 **Vielen Dank für eure Aktivität!**
 **Ihr wollt auch die {top_stats_role.mention} Rolle bekommen? Dann werdet jetzt aktiv im Chat und Voice!**
--# Teamler sind vom Erhalt der Poweruser Rolle ausgeschlossen!"""
+-# Mitglieder des Serverteams sind vom Erhalt der Rolle ausgeschlossen!"""
 
         # Create summary of eligible users who would get roles
         summary = {
@@ -191,10 +230,10 @@ __**Eure Vorteile als Poweruser:**__
 
         return summary, None
 
-    @app_commands.command(name="set-announcement-logs", description="Set channel for recording logs of announcements")
-    async def set_announcement_logs(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    @app_commands.command(name="pw-set-announcement-logs", description="Set channel for recording logs of announcements")
+    async def pw_set_announcement_logs(self, interaction: discord.Interaction, channel: discord.TextChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "set-announcement-logs"):
+        if not await check_permission(interaction, "pw-set-announcement-logs"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -213,10 +252,10 @@ __**Eure Vorteile als Poweruser:**__
 
         return await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="show-test-announcement", description="Show a preview of what the announcement would look like if done today")
-    async def show_test_announcement(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-show-test-announcement", description="Show a preview of what the announcement would look like if done today")
+    async def pw_show_test_announcement(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "show-test-announcement"):
+        if not await check_permission(interaction, "pw-show-test-announcement"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         await interaction.response.defer(ephemeral=True)
@@ -252,9 +291,20 @@ __**Eure Vorteile als Poweruser:**__
         message_leaderboard = db.get_message_leaderboard()
         voice_leaderboard = db.get_voicetime_leaderboard()
         
-        # Find eligible users
-        eligible_message_users = [user for user in message_leaderboard if is_person_eligible(user.userid)]
-        eligible_voice_users = [user for user in voice_leaderboard if is_person_eligible(user.userid)]
+        # Find eligible users using the new method
+        eligible_message_users = []
+        for user in message_leaderboard:
+            if await self.is_member_eligible(user.userid):
+                eligible_message_users.append(user)
+                if len(eligible_message_users) >= 3:
+                    break
+                    
+        eligible_voice_users = []
+        for user in voice_leaderboard:
+            if await self.is_member_eligible(user.userid):
+                eligible_voice_users.append(user)
+                if len(eligible_voice_users) >= 3:
+                    break
         
         # Simulate role assignments
         role_assignments = {
@@ -343,10 +393,10 @@ __**Eure Vorteile als Poweruser:**__
             ephemeral=True  # Ensure this is ephemeral
         )
             
-    @app_commands.command(name="reset-tracking", description="Reset the tracking data")
-    async def reset_tracking(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-reset-tracking", description="Reset the tracking data")
+    async def pw_reset_tracking(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "reset-tracking"):
+        if not await check_permission(interaction, "pw-reset-tracking"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         # Create confirmation embed
@@ -381,7 +431,7 @@ __**Eure Vorteile als Poweruser:**__
         await self.log_tracking_action(
             interaction, 
             "Reset", 
-            "All user message and voice time data has been reset. A new tracking period has started."
+            "All user message and voice time data has been reset.\nA new tracking period has started."
         )
 
         embed = discord.Embed(
@@ -392,10 +442,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.followup.send(embed=embed)
             
-    @app_commands.command(name="start-tracking", description="Start tracking messages and voicetime")
-    async def start_tracking(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-start-tracking", description="Start tracking messages and voicetime")
+    async def pw_start_tracking(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "start-tracking"):
+        if not await check_permission(interaction, "pw-start-tracking"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -421,10 +471,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="stop-tracking", description="Stop tracking messages and voicetime")
-    async def stop_tracking(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-stop-tracking", description="Stop tracking messages and voicetime")
+    async def pw_stop_tracking(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "stop-tracking"):
+        if not await check_permission(interaction, "pw-stop-tracking"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         # Get the current tracking period before stopping
@@ -460,10 +510,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
    
-    @app_commands.command(name="user-stats", description="Check your points")
-    async def user_stats(self, interaction: discord.Interaction, user: discord.User = None):
+    @app_commands.command(name="pw-user-stats", description="Check your points")
+    async def pw_user_stats(self, interaction: discord.Interaction, user: discord.User = None):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "user-stats"):
+        if not await check_permission(interaction, "pw-user-stats"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         if user is None:
@@ -484,10 +534,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="set-max-voicetime", description="Set the max voicetime for which the user will get points at one go.")
-    async def set_max_voicetime(self, interaction: discord.Interaction, max_time: int):
+    @app_commands.command(name="pw-set-max-voicetime", description="Set the max voicetime for which the user will get points at one go.")
+    async def pw_set_max_voicetime(self, interaction: discord.Interaction, max_time: int):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "set-max-voicetime"):
+        if not await check_permission(interaction, "pw-set-max-voicetime"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -506,20 +556,20 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="leaderboard", description="Check leaderboards for both messages and voicetime")
-    async def leaderboard(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-leaderboard", description="Check leaderboards for both messages and voicetime")
+    async def pw_leaderboard(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "leaderboard"):
+        if not await check_permission(interaction, "pw-leaderboard"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         view = LeaderboardView(self.bot, interaction)
         embed = discord.Embed(title="📊 Choose a Leaderboard", description="Select an option from the dropdown menu below.", color=EMBED_COLOR_CODE)
         return await interaction.response.send_message(embed=embed, view=view)
             
-    @app_commands.command(name="announce-winners", description="Announce the winners of the tracking period")
-    async def announce_winners(self, interaction: discord.Interaction, announcement_channel: discord.TextChannel):
+    @app_commands.command(name="pw-announce-winners", description="Announce the winners of the tracking period")
+    async def pw_announce_winners(self, interaction: discord.Interaction, announcement_channel: discord.TextChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "announce-winners"):
+        if not await check_permission(interaction, "pw-announce-winners"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         # Check if top stats role is set
@@ -596,10 +646,10 @@ __**Eure Vorteile als Poweruser:**__
         
         return await interaction.followup.send(embed=confirmation_embed, view=view)
 
-    @app_commands.command(name="set-sub-stats-role", description="Setup the role which is to be assigned to the remaining two person of message & voice leaderboard")
-    async def set_sub_stats_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-set-sub-stats-role", description="Setup the role which is to be assigned to the remaining two person of message & voice leaderboard")
+    async def pw_set_sub_stats_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "set-sub-stats-role"):
+        if not await check_permission(interaction, "pw-set-sub-stats-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         data = []
@@ -619,10 +669,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="remove-sub-stats-role", description="Remove the sub stats role from the settings")
-    async def remove_sub_stats_role(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-remove-sub-stats-role", description="Remove the sub stats role from the settings")
+    async def pw_remove_sub_stats_role(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "remove-sub-stats-role"):
+        if not await check_permission(interaction, "pw-remove-sub-stats-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
@@ -647,6 +697,7 @@ __**Eure Vorteile als Poweruser:**__
         with open(DEFAULTS_JSON_FILE_PATH, "w") as file:
             json.dump(data, file, indent=4)
         
+        
         embed = discord.Embed(
             title="Sub Stats Role Removed",
             description=f"The sub stats role ({role_mention}) has been removed from the settings.",
@@ -655,10 +706,10 @@ __**Eure Vorteile als Poweruser:**__
         
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="set-top-stats-role", description="Setup the role which is to be assigned to the top 1 person of message & voice leaderboard")
-    async def set_top_stats_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-set-top-stats-role", description="Setup the role which is to be assigned to the top 1 person of message & voice leaderboard")
+    async def pw_set_top_stats_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "set-top-stats-role"):
+        if not await check_permission(interaction, "pw-set-top-stats-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         data = []
@@ -678,10 +729,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="tracking-status", description="Check if tracking is enabled")
-    async def tracking_status(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-tracking-status", description="Check if tracking is enabled")
+    async def pw_tracking_status(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "tracking-status"):
+        if not await check_permission(interaction, "pw-tracking-status"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
             
         if await is_tracking():
@@ -705,10 +756,10 @@ __**Eure Vorteile als Poweruser:**__
 
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="poweruser-settings", description="Display all settings and configurations for poweruser function")
-    async def poweruser_settings(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-settings", description="Display all settings and configurations for poweruser function")
+    async def pw_settings(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "poweruser-settings"):
+        if not await check_permission(interaction, "pw-settings"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         # Load all settings
@@ -933,9 +984,22 @@ class ConfirmationView(discord.ui.View):
         top_3_messages = message_leaderboard[:3]
         top_3_voice = voice_leaderboard[:3]
 
-        # Find the top 3 **eligible** users
-        eligible_message_users = [user for user in message_leaderboard if is_person_eligible(user.userid)]
-        eligible_voice_users = [user for user in voice_leaderboard if is_person_eligible(user.userid)]
+        # Find the top 3 **eligible** users using the new method
+        leaderboard_cog = self.bot.get_cog("Leaderboard")
+        
+        eligible_message_users = []
+        for user in message_leaderboard:
+            if await leaderboard_cog.is_member_eligible(user.userid):
+                eligible_message_users.append(user)
+                if len(eligible_message_users) >= 3:
+                    break
+                    
+        eligible_voice_users = []
+        for user in voice_leaderboard:
+            if await leaderboard_cog.is_member_eligible(user.userid):
+                eligible_voice_users.append(user)
+                if len(eligible_voice_users) >= 3:
+                    break
 
         # Assign Roles:
         awarded_users = set()  # Track users who received a role
@@ -1005,20 +1069,18 @@ class ConfirmationView(discord.ui.View):
 
 
 
-        final_message = f"""**TOP Aktivität der letzten {days_passed} Tage** :trophy:
+        final_message = f"""## **TOP Aktivität der letzten {days_passed} Tage** :trophy:
+### Textnachrichten\n{await format_leaderboard(top_3_messages, lambda u: u.messages)}
+### Sprachaktivität\n{await format_leaderboard(top_3_voice, lambda u: f"{round(u.voicetime/60)}h")}
 
-__**Chat-Nachrichten:**__\n{await format_leaderboard(top_3_messages, lambda u: u.messages)}
-
-__**Voice-Channel:**__\n{await format_leaderboard(top_3_voice, lambda u: f"{u.voicetime/60:.2f}h")}
-
-__**Eure Vorteile als Poweruser:**__
+__**Eure Vorteile als Poweruser**__
 ✘ Eine besondere Rolle
 ✘ Die Möglichkeit euren Namen zu ändern
 ✘ Benutzung von GIFs
 
 **Vielen Dank für eure Aktivität!**
 **Ihr wollt auch die {top_stats_role.mention} Rolle bekommen? Dann werdet jetzt aktiv im Chat und Voice!**
--# Teamler sind vom Erhalt der Poweruser Rolle ausgeschlossen!"""
+-# Mitglieder des Serverteams sind vom Erhalt der Rolle ausgeschlossen!"""
 
         # Reset Database Tracking
         db.reset_all_users()
