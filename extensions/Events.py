@@ -25,6 +25,7 @@ class Events(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.voice_users = {}
+        self.voice_tasks = {}  # Track the task for each user to prevent duplicates
 
     async def is_person_jailed(self, user_id: int):
         db = database(DATABASE_FILE_PATH)
@@ -42,19 +43,50 @@ class Events(commands.Cog):
             data = json.load(file)
         
         return data.get("alone_voice_enabled", True)  # Default to True if not set
+    
+    async def is_member_blacklisted(self, member):
+        """Check if a member is blacklisted by ID or any of their roles"""
+        # First check if the user ID is blacklisted
+        if is_person_blacklisted(member.id):
+            print(f"🛑 | User ID {member.id} is blacklisted")
+            return True
+            
+        # Then check each of the member's roles
+        for role in member.roles:
+            if is_person_blacklisted(role.id):
+                print(f"🛑 | Role {role.name} (ID: {role.id}) is blacklisted")
+                return True
+                
+        return False
 
     async def grant_voicetime(self, member: discord.Member):
         """Grant XP every minute while in VC, stopping at 120 minutes."""
-        while member.id in self.voice_users:
-            await asyncio.sleep(60)  # Wait for 1 minute
-
-            if member.voice and member.voice.channel:  # Check if still in VC
+        try:
+            print(f"🟡 | Starting voice tracking for {member.name}")
+            while member.id in self.voice_users:
+                # First check if user is still in voice
+                if not (member.voice and member.voice.channel):
+                    print(f"🟡 | {member.name} is no longer in voice channel")
+                    if member.id in self.voice_users:
+                        del self.voice_users[member.id]
+                    break
+                
+                # Wait for 1 minute
+                await asyncio.sleep(60)
+                
+                # Check again if user is still in voice after waiting
+                if member.id not in self.voice_users or not (member.voice and member.voice.channel):
+                    print(f"🟡 | {member.name} left voice during wait period")
+                    if member.id in self.voice_users:
+                        del self.voice_users[member.id]
+                    break
+                
                 user_data = self.voice_users[member.id]
-
-                data = {}
+                
+                # Load settings
                 with open(DEFAULTS_JSON_FILE_PATH, "r") as file:
                     data = json.load(file)
-
+                
                 max_voice_points = data["max_voice_points"]
                 
                 # Check if user is alone in voice channel and if alone voice is disabled
@@ -67,30 +99,47 @@ class Events(commands.Cog):
                     user_data["total_minutes"] += 1
                     self.voice_users[member.id] = user_data
                     continue
-
+                
                 if user_data["total_minutes"] < max_voice_points:
                     user_data["total_minutes"] += 1
                     self.voice_users[member.id] = user_data
                     
-                    if not (is_channel_blacklisted(member.voice.channel.id) or is_person_blacklisted(member.id)):
+                    # Check blacklists
+                    channel_blacklisted = is_channel_blacklisted(member.voice.channel.id)
+                    member_blacklisted = await self.is_member_blacklisted(member)
+
+                    print(f"{member.voice.channel.id}: channel blacklist? {channel_blacklisted}")
+                    print(f"{member.name}: member blacklist? {member_blacklisted}")
+                    
+                    if not (channel_blacklisted or member_blacklisted):
+                        # Add voice time to database
                         db = database(DATABASE_FILE_PATH)
                         db.add_user(User(member.id, member.name))
-                        db.add_voicetime(member.id)
-
-                        print(f"🟢 | 1 Minute added to {member.name}")
-
+                        result = db.add_voicetime(member.id)
+                        
+                        print(f"🔵 | 1 Minute added to {member.name} at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                    else:
+                        print(f"🔴 | {member.name} is blacklisted or in a blacklisted channel")
                 else:
-                    print(f"{member.display_name} has reached the 120-minute limit.")
-                    del self.voice_users[member.id]
+                    print(f"🟡 | {member.display_name} has reached the {max_voice_points}-minute limit.")
+                    if member.id in self.voice_users:
+                        del self.voice_users[member.id]
                     break
-            else:
+                    
+        except Exception as e:
+            print(f"❌ | Error in grant_voicetime for {member.name}: {e}")
+        finally:
+            # Clean up in case of any issues
+            if member.id in self.voice_users:
                 del self.voice_users[member.id]
-                break
+            if member.id in self.voice_tasks:
+                del self.voice_tasks[member.id]
+            print(f"🟡 | Voice tracking ended for {member.name}")
 
-    @app_commands.command(name="toggle-alone-voice", description="Toggle whether users alone in voice channels should receive points")
-    async def toggle_alone_voice(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-toggle-alone-voice", description="Toggle whether users alone in voice channels should receive points")
+    async def pw_toggle_alone_voice(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "toggle-alone-voice"):
+        if not await check_permission(interaction, "pw-toggle-alone-voice"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         # Load current settings
@@ -122,35 +171,105 @@ class Events(commands.Cog):
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
-        if await is_tracking():
-            if after.channel and not before.channel:  # User joined a VC
-                if member.id not in self.voice_users:
-                    self.voice_users[member.id] = {
-                        "start_time": datetime.datetime.utcnow(),
-                        "total_minutes": 0
-                    }
-                await self.grant_voicetime(member)
+        # Skip voice updates from bots
+        if member.bot:
+            return
+        
+        # Check if tracking is enabled
+        tracking_enabled = await is_tracking()
+        if not tracking_enabled:
+            print(f"🔴 | Tracking is disabled, ignoring voice update for {member.name}")
+            return
             
-            elif before.channel and not after.channel:  # User left a VC
+        print(f"🟡 | Voice state update for {member.name}: {before.channel} -> {after.channel}")
+        
+        if after.channel and not before.channel:  # User joined a VC
+            print(f"🟡 | {member.name} joined voice channel {after.channel.name}")
+            
+            # Check if channel or member is blacklisted before starting tracking
+            channel_blacklisted = is_channel_blacklisted(after.channel.id)
+            member_blacklisted = await self.is_member_blacklisted(member)
+            
+            if channel_blacklisted or member_blacklisted:
+                print(f"🛑 | Not starting voice tracking for {member.name} due to blacklist")
+                return
+            
+            # Cancel any existing task
+            if member.id in self.voice_tasks and not self.voice_tasks[member.id].done():
+                print(f"🟡 | Cancelling existing task for {member.name}")
+                self.voice_tasks[member.id].cancel()
+                
+            # Set up tracking
+            self.voice_users[member.id] = {
+                "start_time": datetime.datetime.utcnow(),
+                "total_minutes": 0
+            }
+            
+            # Create and store the task
+            print(f"🟡 | Creating new voice tracking task for {member.name}")
+            task = asyncio.create_task(self.grant_voicetime(member))
+            self.voice_tasks[member.id] = task
+        
+        elif before.channel and not after.channel:  # User left a VC
+            print(f"🟡 | {member.name} left voice channel {before.channel.name}")
+            
+            # Clean up tracking
+            if member.id in self.voice_users:
+                del self.voice_users[member.id]
+                
+            # Cancel the task if it exists
+            if member.id in self.voice_tasks:
+                if not self.voice_tasks[member.id].done():
+                    print(f"🟡 | Cancelling voice tracking task for {member.name}")
+                    self.voice_tasks[member.id].cancel()
+                del self.voice_tasks[member.id]
+        
+        elif before.channel and after.channel and before.channel != after.channel:  # User switched channels
+            print(f"🟡 | {member.name} switched from {before.channel.name} to {after.channel.name}")
+            
+            # Check if new channel is blacklisted
+            if is_channel_blacklisted(after.channel.id):
+                print(f"🛑 | {member.name} moved to blacklisted channel, stopping tracking")
+                # Stop tracking
                 if member.id in self.voice_users:
-                    del self.voice_users[member.id]  # Remove user from tracking
-
+                    del self.voice_users[member.id]
+                
+                # Cancel the task if it exists
+                if member.id in self.voice_tasks:
+                    if not self.voice_tasks[member.id].done():
+                        self.voice_tasks[member.id].cancel()
+                    del self.voice_tasks[member.id]
+            # No need to restart the task for non-blacklisted channels, it will continue tracking
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        # Skip messages from bots and webhooks
+        if message.author.bot or message.webhook_id:
+            return
+            
         if message.author != self.bot.user and await is_tracking():
             user = User(message.author.id, message.author.name)
+
+            channel_blacklisted = is_channel_blacklisted(message.channel.id)
+            member_blacklisted = await self.is_member_blacklisted(message.author)
+
+            print(f"{message.channel.id}: channel blacklist? {channel_blacklisted}")
+            print(f"{message.author.name}: member blacklist? {member_blacklisted}")
             
-            if not (is_channel_blacklisted(message.channel.id) or is_person_blacklisted(message.author.id)):
+            if not (channel_blacklisted or member_blacklisted):
                 db = database(DATABASE_FILE_PATH)
                 db.add_user(user=user)
                 db.add_message(message.author.id)
 
-                print(f"🟢 | 1 Message added to {message.author.name}")
+                print(f"🟢 | 1 Message added to {message.author.name} at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+            else:
+                print(f"🔴 | Not adding message points for {message.author.name} due to blacklist")
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         # Check if the user is jailed
+        db = database(DATABASE_FILE_PATH)
+        db.add_user(User(member.id, member.name))
         if await is_person_jailed(user_id=member.id):
             role_id = await get_jail_role()
             if role_id:
@@ -185,6 +304,8 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         """Removes any additional roles from jailed users but allows the jail role to be added."""
+        db = database(DATABASE_FILE_PATH)
+        db.add_user(User(after.id, after.name))
         if await is_person_jailed(after.id):
             jail_role_id = await get_jail_role()
             jail_role = after.guild.get_role(jail_role_id)
