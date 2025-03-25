@@ -10,10 +10,10 @@ class Blacklists(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="blacklist-voice-channel", description="Blacklist a voice channel")
-    async def blacklist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
+    @app_commands.command(name="pw-blacklist-voice-channel", description="Blacklist a voice channel")
+    async def pw_blacklist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "blacklist-voice-channel"):
+        if not await check_permission(interaction, "pw-blacklist-voice-channel"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
 
         try:
@@ -56,10 +56,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="whitelist-voice-channel", description="Whitelist a voice channel")
-    async def whitelist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
+    @app_commands.command(name="pw-whitelist-voice-channel", description="Whitelist a voice channel")
+    async def pw_whitelist_voice_channel(self, interaction: discord.Interaction, channel: discord.VoiceChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "whitelist-voice-channel"):
+        if not await check_permission(interaction, "pw-whitelist-voice-channel"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -102,10 +102,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="blacklist-text-channel", description="Blacklist a text channel")
-    async def blacklist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    @app_commands.command(name="pw-blacklist-text-channel", description="Blacklist a text channel")
+    async def pw_blacklist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "blacklist-text-channel"):
+        if not await check_permission(interaction, "pw-blacklist-text-channel"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -148,10 +148,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="whitelist-text-channel", description="Whitelist a text channel")
-    async def whitelist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
+    @app_commands.command(name="pw-whitelist-text-channel", description="Whitelist a text channel")
+    async def pw_whitelist_text_channel(self, interaction: discord.Interaction, channel: discord.TextChannel):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "whitelist-text-channel"):
+        if not await check_permission(interaction, "pw-whitelist-text-channel"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -194,10 +194,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="blacklist-user", description="Blacklist a user")
-    async def blacklist_user(self, interaction: discord.Interaction, user: discord.User):
+    @app_commands.command(name="pw-blacklist-user", description="Blacklist a user")
+    async def pw_blacklist_user(self, interaction: discord.Interaction, user: discord.User):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "blacklist-user"):
+        if not await check_permission(interaction, "pw-blacklist-user"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -240,10 +240,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="whitelist-user", description="Whitelist a user")
-    async def whitelist_user(self, interaction: discord.Interaction, user: discord.User):
+    @app_commands.command(name="pw-whitelist-user", description="Whitelist a user")
+    async def pw_whitelist_user(self, interaction: discord.Interaction, user: discord.User):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "whitelist-user"):
+        if not await check_permission(interaction, "pw-whitelist-user"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -286,10 +286,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="blacklist-role", description="Blacklist a role")
-    async def blacklist_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-blacklist-role", description="Blacklist a role")
+    async def pw_blacklist_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "blacklist-role"):
+        if not await check_permission(interaction, "pw-blacklist-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -332,10 +332,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="whitelist-role", description="Whitelist a role")
-    async def whitelist_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-whitelist-role", description="Whitelist a role")
+    async def pw_whitelist_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "whitelist-role"):
+        if not await check_permission(interaction, "pw-whitelist-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -378,10 +378,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="restrict-user" ,description="Restrict a user from getting the reward roles")
-    async def restrict_user(self, interaction: discord.Interaction, user: discord.User):
+    @app_commands.command(name="pw-restrict-user" ,description="Restrict a user from getting the reward roles")
+    async def pw_restrict_user(self, interaction: discord.Interaction, user: discord.User):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "restrict-user"):
+        if not await check_permission(interaction, "pw-restrict-user"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -424,10 +424,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
     
-    @app_commands.command(name="unrestrict-user", description="Unrestrict a user from getting the reward roles")
-    async def unrestrict_user(self, interaction: discord.Interaction, user: discord.User):
+    @app_commands.command(name="pw-unrestrict-user", description="Unrestrict a user from getting the reward roles")
+    async def pw_unrestrict_user(self, interaction: discord.Interaction, user: discord.User):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "unrestrict-user"):
+        if not await check_permission(interaction, "pw-unrestrict-user"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -470,10 +470,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="restrict-role", description="Restrict a role from getting the reward roles")
-    async def restrict_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-restrict-role", description="Restrict a role from getting the reward roles")
+    async def pw_restrict_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "restrict-role"):
+        if not await check_permission(interaction, "pw-restrict-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -516,10 +516,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="unrestrict-role", description="Unrestrict a role from getting the reward roles")
-    async def unrestrict_role(self, interaction: discord.Interaction, role: discord.Role):
+    @app_commands.command(name="pw-unrestrict-role", description="Unrestrict a role from getting the reward roles")
+    async def pw_unrestrict_role(self, interaction: discord.Interaction, role: discord.Role):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "unrestrict-role"):
+        if not await check_permission(interaction, "pw-unrestrict-role"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
@@ -562,10 +562,10 @@ class Blacklists(commands.Cog):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.command(name="poweruser-blacklist-info", description="Get information about the blacklists of poweruser function")
-    async def blacklist_info(self, interaction: discord.Interaction):
+    @app_commands.command(name="pw-blacklist-info", description="Get information about the blacklists of poweruser function")
+    async def pw_blacklist_info(self, interaction: discord.Interaction):
         # Check if user has permission to use this command
-        if not await check_permission(interaction, "poweruser-blacklist-info"):
+        if not await check_permission(interaction, "pw-blacklist-info"):
             return await interaction.response.send_message("🔴 You do not have permission to use this command 🔴", ephemeral=True)
         
         try:
