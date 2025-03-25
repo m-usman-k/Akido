@@ -5,7 +5,7 @@
         "roles": []
     },
     {
-        "command": "poweruser-settings",
+        "command": "pw-settings",
         "users": [],
         "roles": []
     },
@@ -25,67 +25,67 @@
         "roles": []
     },
     {
-        "command": "blacklist-voice-channel",
+        "command": "pw-blacklist-voice-channel",
         "users": [],
         "roles": []
     },
     {
-        "command": "whitelist-voice-channel",
+        "command": "pw-whitelist-voice-channel",
         "users": [],
         "roles": []
     },
     {
-        "command": "blacklist-text-channel",
+        "command": "pw-blacklist-text-channel",
         "users": [],
         "roles": []
     },
     {
-        "command": "whitelist-text-channel",
+        "command": "pw-whitelist-text-channel",
         "users": [],
         "roles": []
     },
     {
-        "command": "blacklist-user",
+        "command": "pw-blacklist-user",
         "users": [],
         "roles": []
     },
     {
-        "command": "whitelist-user",
+        "command": "pw-whitelist-user",
         "users": [],
         "roles": []
     },
     {
-        "command": "blacklist-role",
+        "command": "pw-blacklist-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "whitelist-role",
+        "command": "pw-whitelist-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "restrict-user",
+        "command": "pw-restrict-user",
         "users": [],
         "roles": []
     },
     {
-        "command": "unrestrict-user",
+        "command": "pw-unrestrict-user",
         "users": [],
         "roles": []
     },
     {
-        "command": "restrict-role",
+        "command": "pw-restrict-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "unrestrict-role",
+        "command": "pw-unrestrict-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "poweruser-blacklist-info",
+        "command": "pw-blacklist-info",
         "users": [],
         "roles": []
     },
@@ -110,67 +110,67 @@
         "roles": []
     },
     {
-        "command": "set-announcement-logs",
+        "command": "pw-set-announcement-logs",
         "users": [],
         "roles": []
     },
     {
-        "command": "show-test-announcement",
+        "command": "pw-show-test-announcement",
         "users": [],
         "roles": []
     },
     {
-        "command": "reset-tracking",
+        "command": "pw-reset-tracking",
         "users": [],
         "roles": []
     },
     {
-        "command": "start-tracking",
+        "command": "pw-start-tracking",
         "users": [],
         "roles": []
     },
     {
-        "command": "stop-tracking",
+        "command": "pw-stop-tracking",
         "users": [],
         "roles": []
     },
     {
-        "command": "user-stats",
+        "command": "pw-user-stats",
         "users": [],
         "roles": []
     },
     {
-        "command": "set-max-voicetime",
+        "command": "pw-set-max-voicetime",
         "users": [],
         "roles": []
     },
     {
-        "command": "leaderboard",
+        "command": "pw-leaderboard",
         "users": [],
         "roles": []
     },
     {
-        "command": "announce-winners",
+        "command": "pw-announce-winners",
         "users": [],
         "roles": []
     },
     {
-        "command": "set-sub-stats-role",
+        "command": "pw-set-sub-stats-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "set-top-stats-role",
+        "command": "pw-set-top-stats-role",
         "users": [],
         "roles": []
     },
     {
-        "command": "tracking-status",
+        "command": "pw-tracking-status",
         "users": [],
         "roles": []
     },
     {
-        "command": "toggle-alone-voice",
+        "command": "pw-toggle-alone-voice",
         "users": [],
         "roles": []
     },
@@ -180,7 +180,7 @@
         "roles": []
     },
     {
-        "command": "remove-sub-stats-role",
+        "command": "pw-remove-sub-stats-role",
         "users": [],
         "roles": []
     }
